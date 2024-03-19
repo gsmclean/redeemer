@@ -1,0 +1,38 @@
+{{define "main"}}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col">
+            <h4>Welcome {{ .UserName }}</h4>
+        </div>
+        <div class="col">
+            {{ if lt .TwitchAccount 0 }}
+            <p>You have not linked your twitch account</p>
+            <a href="/oauth">click here to link</a>
+            {{ else }}
+            {{ if not .Subs }}
+            <p>No event subscriptions Yet</p>
+            {{ end }}
+            {{ range .Subs}}
+            <div class="row">ID: {{ $.ID }} TYPE: {{ $.Type }} STATUS: {{ $.Status }} Brodcast ID: {{
+                $.Condition.BroadcasterUserID }}</div>
+            {{end}}
+            {{ end }}
+        </div>
+        <div class="col">
+            {{ if not .Chans }}
+            <p>No Channels yet</p>
+            {{end}}
+            {{ range $i, $chan := .Chans }}
+            {{ $chan.ChannelName }}
+            <div class="row">
+                <form action="/redeemsub" method="post"><input type="hidden" name="tid" id="tid"
+                        value="{{ $chan.ChannelID }}"><input type="submit" value="Add Redeems subscription"></form>
+                <form action="/followsub" method="post"><input type="hidden" name="tid" id="tid"
+                        value="{{ $chan.ChannelID }}"><input type="submit" value="Add follow subscription"></form>
+            </div>
+            {{ end }}
+        </div>
+
+    </div>
+</div>
+{{end}}

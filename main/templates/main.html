@@ -1,0 +1,7 @@
+{{define "main"}}
+    <h1> Go Redeems</h1>
+    <p>A small site for managing custom channel point redeems</p>
+    {{if .IsLoggedIn}}
+    <p> Hello {{.UserName}}</p>
+    {{end}}
+{{end}}

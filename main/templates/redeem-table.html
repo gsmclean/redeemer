@@ -1,0 +1,43 @@
+<table class="table">
+    <thead>
+        <tr>
+            <th scope="col">Date</th>
+            <th scope="col">Broadcaster</th>
+            <th scope="col">User Name</th>
+            <th scope="col">User Input</th>
+            <th scope="col">Reward Title</th>
+            <th scope="col">Status</th>
+            <th scope="col">State</th>
+            <th scope="col">Delete</th>
+        </tr>
+    </thead>
+    <tbody hx-target="closest tr" hx-swap="outerHTML swap:1s">
+        {{ $states := .States }}
+        {{ range $v := .Items }}
+        <tr>
+            <td>{{ $v.DT }}</td>
+            <td>{{$v.BroadcasterName}}</td>
+            <td>{{$v.UserName}}</td>
+            <td>{{$v.UserInput}}</td>
+            <td>{{$v.RewardTitle}}</td>
+            <td>{{$v.Status}}</td>
+            <td>
+                <form>
+                    <input type="hidden" name="id" value="{{ $v.ID }}">
+                    <select name="state" hx-post="/redeem" hx-swap="none">
+                        {{ range $s := $states}}
+                        <option value="{{ $s.ID }}" {{ if eq $s.ID $v.StateID }} selected {{ end }}>{{ $s.Name }}
+                        </option>
+                        {{end}}
+                    </select>
+                </form>
+            </td>
+            <td>
+                <button class="btn btn-danger" hx-delete="/redeem/{{ $v.ID }}" hx-confirm="Are you sure?">
+                    Delete
+                </button>
+            </td>
+        </tr>
+        {{end}}
+    </tbody>
+</table>

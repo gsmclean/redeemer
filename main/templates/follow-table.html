@@ -1,0 +1,41 @@
+<table class="table">
+    <thead>
+        <tr>
+            <th scope="col">ID</th>
+            <th scope="col">Date</th>
+            <th scope="col">User ID</th>
+            <th scope="col">User Name</th>
+            <th scope="col">Streamer Name</th>
+            <th>states</th>
+            <th>Delete</th>
+        </tr>
+    </thead>
+    <tbody hx-confirm="Are you sure?" hx-target="closest tr" hx-swap="outerHTML swap:1s">
+        {{ $states := .States }}
+        {{ range $v := .Items }}
+        <tr>
+            <td>{{ $v.ID }}</td>
+            <td>{{ $v.DT }}</td>
+            <td>{{$v.UserId}}</td>
+            <td>{{$v.UserName}}</td>
+            <td>{{$v.BroadcasterName}}</td>
+            <td>
+                <form>
+                    <input type="hidden" name="id" value="{{ $v.ID }}">
+                    <select name="state" hx-post="/follow" hx-swap="none">
+                        {{ range $s := $states}}
+                        <option value="{{ $s.ID }}" {{ if eq $s.ID $v.StatusID }} selected {{ end }}>{{ $s.Name }}
+                        </option>
+                        {{end}}
+                    </select>
+                </form>
+            </td>
+            <td>
+                <button class="btn btn-danger" hx-delete="/follow/{{ $v.ID }}">
+                    Delete
+                </button>
+            </td>
+        </tr>
+        {{end}}
+    </tbody>
+</table>

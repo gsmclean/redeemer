@@ -1,0 +1,15 @@
+services:
+  redeemer:
+    image: cosmtrek/air
+    working_dir: /goredeem
+    env_file:
+      - .env
+    volumes:
+      - ./main/:/goredeem/
+    networks:
+      - pykeydocker_default
+    restart: unless-stopped
+
+networks:
+  pykeydocker_default:
+    external: true

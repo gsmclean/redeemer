@@ -1,0 +1,27 @@
+services:
+  backend:
+    container_name: goredeem
+    build: ./
+    stop_signal: SIGINT
+    environment:
+      - REDEEM-URL=https://url.to.base
+      - REDEEM-DB=postgresql://user:pass@pgdb/db
+      - REDEEM-ID=app_id
+      - REDEEM-SECRET=app_secret
+      - REDEEM-SCOPE=app_scope
+      - REDEEM-EVENT-SECRET=webhook_secret
+      - REDEEM-PORT=8083
+    volumes:
+      - ./main:/src
+    ports:
+      - 8083:8083
+    restart: unless-stopped
+    depends_on:
+      - redeem_db
+  redeem_db:
+    image: postgres
+    restart: always
+    environment:
+      POSTGRES_PASSWORD: heck-godhood-mecca
+    ports:
+      - 5432:5432

@@ -1,0 +1,21 @@
+{{define "main"}}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col">
+            <h4>Welcome {{ .UserName }}</h4>
+            {{if .Channels}}
+            <select name="bcid" hx-get="/followtable" hx-target="#follows">
+                <option value="" selected>Select a Streamer to Filter List</option>
+                {{ range $i, $chan := .Channels }}
+                <option value="{{ $chan.ChannelID }}">{{ $chan.ChannelName }}</option>
+                {{end}}
+            </select>
+            {{else}}
+            <p> No Channels Available</p>
+            {{end}}
+        </div>
+    </div>
+    <div id="follows" class="container-flud" hx-get="/followtable" hx-trigger="load">
+    </div>
+</div>
+{{end}}
