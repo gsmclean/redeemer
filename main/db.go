@@ -196,24 +196,6 @@ func (sdb SiteDB) insertUser(username, password string) error {
 
 	return err
 }
-func (sdb SiteDB) queryUsers() ([]string, error) {
-	rows, err := sdb.DB.Query("SELECT user_name FROM users")
-	if err != nil {
-		return nil, err
-	}
-	defer rows.Close()
-
-	var names []string
-	for rows.Next() {
-		var name string
-		if err := rows.Scan(&name); err != nil {
-			return nil, err
-		}
-		names = append(names, name)
-	}
-
-	return names, nil
-}
 
 func (sdb SiteDB) verifyLogin(username, password string) (bool, int) {
 	// Retrieve the hashed password from the database

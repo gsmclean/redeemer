@@ -8,7 +8,6 @@ import (
 	"strings"
 
 	"github.com/google/uuid"
-	"github.com/gorilla/sessions"
 
 	helix "github.com/nicklaw5/helix/v2"
 )
@@ -68,7 +67,7 @@ func oAuthCallback(w http.ResponseWriter, r *http.Request) {
 
 func requestOAuth(w http.ResponseWriter, r *http.Request) {
 	session, _ := store.Get(r, "session.id")
-	login := IsLoggedIn(session)
+	login := session.Values["Authenticated"].(bool)
 	client, err := helix.NewClient(&helix.Options{
 		ClientID:    sc.Client_ID,
 		RedirectURI: fmt.Sprintf("%v/handle", sc.BaseURL),
@@ -101,69 +100,4 @@ func requestOAuth(w http.ResponseWriter, r *http.Request) {
 		log.Print(err.Error())
 		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
 	}
-}
-
-// func getUserID(w http.ResponseWriter, r *http.Request) {
-// 	client, err := helix.NewClient(&helix.Options{
-// 		ClientID:        sc.Client_ID,
-// 		UserAccessToken: "vriiopv8k4l6yfj7vq2drpuzz3m8p3",
-// 	})
-// 	if err != nil {
-// 		// handle error
-// 	}
-
-// 	resp, err := client.GetUsers(&helix.UsersParams{
-// 		IDs:    []string{"26301881", "18074328"},
-// 		Logins: []string{"summit1g", "lirik"},
-// 	})
-// 	if err != nil {
-// 		// handle error
-// 	}
-
-// 	fmt.Printf("%+v\n", resp)
-// }
-
-func testFlow(w http.ResponseWriter, r *http.Request) {
-	client, err := helix.NewClient(&helix.Options{
-		ClientID:     sc.Client_ID,
-		ClientSecret: sc.Client_Secret,
-		RedirectURI:  fmt.Sprintf("%v/handle", sc.BaseURL),
-	})
-	if err != nil {
-		panic("on client create")
-	}
-
-	resp, err := client.RequestAppAccessToken([]string{"channel:read:redemptions"})
-	if err != nil {
-		panic("on app token request")
-	}
-
-	fmt.Printf("%+v\n", resp)
-
-	// Set the access token on the client
-	client.SetAppAccessToken(resp.Data.AccessToken)
-	id := "151737789"
-
-	sresp, err := client.CreateEventSubSubscription(&helix.EventSubSubscription{
-		Type:    helix.EventSubTypeChannelPointsCustomRewardRedemptionAdd,
-		Version: "1",
-		Condition: helix.EventSubCondition{
-			BroadcasterUserID: id,
-		},
-		Transport: helix.EventSubTransport{
-			Method:   "webhook",
-			Callback: fmt.Sprintf("%v/eventsub", sc.BaseURL),
-			Secret:   sc.Webhook_Secret,
-		},
-	})
-	if err != nil {
-		panic("creating sub")
-	}
-
-	fmt.Printf("%+v\n", sresp)
-
-}
-
-func IsLoggedIn(c *sessions.Session) bool {
-	return c.Values["Authenticated"].(bool)
 }

@@ -11,35 +11,6 @@ import (
 	helix "github.com/nicklaw5/helix/v2"
 )
 
-func startSub(w http.ResponseWriter, r *http.Request) {
-	client, err := helix.NewClient(&helix.Options{
-		ClientID:        sc.Client_ID,
-		UserAccessToken: "",
-	})
-	if err != nil {
-		panic("Creating sub client")
-	}
-
-	resp, err := client.CreateEventSubSubscription(&helix.EventSubSubscription{
-		Type:    "channel.chat.message",
-		Version: "1",
-		Condition: helix.EventSubCondition{
-			BroadcasterUserID: "151737789",
-		},
-		Transport: helix.EventSubTransport{
-			Method:   "webhook",
-			Callback: fmt.Sprintf("%v/eventsub", sc.BaseURL),
-			Secret:   sc.Webhook_Secret,
-		},
-	})
-	if err != nil {
-		panic("Creating Sub")
-	}
-
-	fmt.Printf("%+v\n", resp)
-
-}
-
 type eventSubNotification struct {
 	Subscription helix.EventSubSubscription `json:"subscription"`
 	Challenge    string                     `json:"challenge"`
@@ -73,41 +44,11 @@ func eventsub(w http.ResponseWriter, r *http.Request) {
 	}
 	var followEvent helix.EventSubChannelPointsCustomRewardRedemptionEvent
 	err = json.NewDecoder(bytes.NewReader(vals.Event)).Decode(&followEvent)
+	if err != nil {
+		stdLog.Printf("Error decoding json for sub event")
+	}
 
 	log.Printf("got follow webhook: %s redeemed %s\n", followEvent.UserName, followEvent.Reward.Title)
-	w.WriteHeader(200)
-	w.Write([]byte("ok"))
-}
-
-func pollHandle(w http.ResponseWriter, r *http.Request) {
-	body, err := io.ReadAll(r.Body)
-	if err != nil {
-		log.Println(err)
-		return
-	}
-	defer r.Body.Close()
-	// verify that the notification came from twitch using the secret.
-	if !helix.VerifyEventSubNotification(sc.Webhook_Secret, r.Header, string(body)) {
-		log.Println("no valid signature on subscription")
-		return
-	} else {
-		log.Println("verified signature for subscription")
-	}
-	var vals eventSubNotification
-	err = json.NewDecoder(bytes.NewReader(body)).Decode(&vals)
-	if err != nil {
-		log.Println(err)
-		return
-	}
-	// if there's a challenge in the request, respond with only the challenge to verify your eventsub.
-	if vals.Challenge != "" {
-		w.Write([]byte(vals.Challenge))
-		return
-	}
-	var followEvent helix.EventSubChannelPollBeginEvent
-	err = json.NewDecoder(bytes.NewReader(vals.Event)).Decode(&followEvent)
-
-	log.Printf("got poll webhook: %s started poll %s\n", followEvent.BroadcasterUserID, followEvent.Title)
 	w.WriteHeader(200)
 	w.Write([]byte("ok"))
 }
@@ -182,6 +123,12 @@ func redeemHandle(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		panic(err.Error())
 	}
+	var shtId = 488613652
+	var spshtId = "1P76tbPV1vYZCwI6KNuFnFJmFXKQZZ1VIDXSnTJ89kE4"
+	err = PushToSheet(int64(shtId), spshtId, []string{redeemEvent.BroadcasterUserName, redeemEvent.Reward.Title, redeemEvent.UserLogin, redeemEvent.UserName, redeemEvent.RedeemedAt.Time.Local().String()})
+	if err != nil {
+		stdLog.Printf("Error pushing to sheets: %v\n", err.Error())
+	}
 
 	log.Printf("got poll webhook: %s had a reward (%s) redmption by %s\n", redeemEvent.BroadcasterUserName, redeemEvent.Reward.Title, redeemEvent.UserName)
 	err = sdb.AddRedeemEvent(redeemEvent)
@@ -197,14 +144,14 @@ func closeSubs(w http.ResponseWriter, r *http.Request) {
 		ClientID:     sc.Client_ID,
 		ClientSecret: sc.Client_Secret,
 	})
+	if err != nil {
+		stdLog.Printf("Error creating client for closing subs: %v\n", err.Error())
+	}
 	aatresp, err := client.RequestAppAccessToken([]string{"channel:read:redemptions"})
 	if err != nil {
 		panic("error on app token request")
 	}
 	client.SetAppAccessToken(aatresp.Data.AccessToken)
-	if err != nil {
-		panic("Failed on client")
-	}
 
 	subs, err := GetSubs("")
 	if err != nil {
@@ -234,9 +181,6 @@ func GetSubs(tid string) ([]helix.EventSubSubscription, error) {
 		return nil, err
 	}
 	client.SetAppAccessToken(aatresp.Data.AccessToken)
-	if err != nil {
-		return nil, err
-	}
 	var esp helix.EventSubSubscriptionsParams
 	if tid != "" {
 		esp.UserID = tid
@@ -266,9 +210,6 @@ func AddFollowSub(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	client.SetAppAccessToken(aatresp.Data.AccessToken)
-	if err != nil {
-		return
-	}
 
 	tid := r.PostForm.Get("tid")
 	fmt.Println(tid)
@@ -311,9 +252,6 @@ func AddRedeemSub(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	client.SetAppAccessToken(aatresp.Data.AccessToken)
-	if err != nil {
-		return
-	}
 
 	tid := r.PostForm.Get("tid")
 	fmt.Println(tid)
