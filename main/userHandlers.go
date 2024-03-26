@@ -15,6 +15,7 @@ type BasicData struct {
 	UserName      string
 	TwitchAccount int
 	IsLoggedIn    bool
+	CanLogin      bool
 	CanInvite     bool
 	IsAdmin       bool
 }

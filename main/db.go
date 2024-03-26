@@ -147,9 +147,12 @@ CREATE TABLE IF NOT EXISTS "public"."users" (
     CONSTRAINT "users_pkey" PRIMARY KEY ("id"),
     CONSTRAINT "users_username_key" UNIQUE ("user_name")
 ) WITH (oids = false);
-
-
-ALTER TABLE ONLY "public"."follow_events" ADD CONSTRAINT "follow_events_state_id_fkey" FOREIGN KEY (state_id) REFERENCES states(id) NOT DEFERRABLE;
+	`)
+	if err != nil {
+		return err
+	}
+	sdb.DB.Exec(`
+	LTER TABLE ONLY "public"."follow_events" ADD CONSTRAINT "follow_events_state_id_fkey" FOREIGN KEY (state_id) REFERENCES states(id) NOT DEFERRABLE;
 
 ALTER TABLE ONLY "public"."redeem_events" ADD CONSTRAINT "redeem_events_state_id_fkey" FOREIGN KEY (state_id) REFERENCES states(id) NOT DEFERRABLE;
 
@@ -158,9 +161,6 @@ ALTER TABLE ONLY "public"."twitch_relations" ADD CONSTRAINT "twitchRelations_use
 
 ALTER TABLE ONLY "public"."users" ADD CONSTRAINT "users_twitchAccount_fkey" FOREIGN KEY (twitch_account) REFERENCES twitch_accounts(id) NOT DEFERRABLE;
 	`)
-	if err != nil {
-		return err
-	}
 	res, err := sdb.DB.Query("SELECT * FROM USERS")
 	if err != nil {
 		return err
@@ -201,9 +201,14 @@ func (sdb SiteDB) verifyLogin(username, password string) (bool, int) {
 	// Retrieve the hashed password from the database
 	var hashedPassword string
 	var suid string
-	rows := sdb.DB.QueryRow("SELECT password, id FROM users WHERE user_name = $1", username)
-	err := rows.Scan(&hashedPassword, &suid)
+	var perms sql.NullInt16
+	rows := sdb.DB.QueryRow("SELECT password, id, permissions FROM users WHERE user_name = $1", username)
+	err := rows.Scan(&hashedPassword, &suid, &perms)
 	if err != nil {
+		return false, -1
+	}
+
+	if !perms.Valid {
 		return false, -1
 	}
 
@@ -215,7 +220,7 @@ func (sdb SiteDB) verifyLogin(username, password string) (bool, int) {
 	if err != nil {
 		return false, -1
 	}
-	return true, int(uid)
+	return (perms.Int16&1 > 0), int(uid)
 }
 
 func (sdb SiteDB) GetUserChannels(user int) ([]TwitchAccount, error) {
@@ -403,9 +408,13 @@ func (sdb SiteDB) GetUserData(uid int) (BasicData, error) {
 		bd.TwitchAccount = -1
 	}
 	if p.Valid {
-		bd.IsAdmin = (p.Int16 & 2) > 0
+		bd.IsAdmin = (p.Int16 & 4) > 0
+		bd.CanInvite = (p.Int16 & 2) > 0
+		bd.CanLogin = (p.Int16 & 1) > 0
 	} else {
-		bd.CanInvite = (p.Int16 & 1) > 0
+		bd.IsAdmin = false
+		bd.CanInvite = false
+		bd.CanLogin = false
 	}
 	bd.UserID = uid
 	return bd, err
