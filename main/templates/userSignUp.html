@@ -1,0 +1,15 @@
+{{define "main"}}
+<h1>Create User</h1>
+{{if .Message}}
+<p style="color: red;">{{.Message}}</p>
+{{end}}
+<form method="post" action="/signup">
+    <label for="username">Username:</label>
+    <input type="text" id="username" name="username" value="{{ .User }}" required><br>
+    <label for="password">Password:</label>
+    <input type="password" id="password" name="password" required><br>
+    <label for="confirm">Confirm:</label>
+    <input type="password" id="confirm" name="confirm" required><br>
+    <button type="submit">Login</button>
+</form>
+{{end}}
