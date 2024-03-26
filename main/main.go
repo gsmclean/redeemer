@@ -30,6 +30,7 @@ type SiteConfig struct {
 	Scope_String   string
 	Webhook_Secret string
 	Port           string
+	Store_Key      string
 }
 
 var (
@@ -47,11 +48,9 @@ func init() {
 	}
 	stdLog = log.New(os.Stdout, "Warn: ", log.Ldate|log.Ltime)
 	fileLog = log.New(file, "Error: ", log.Ldate|log.Ltime|log.Lshortfile)
-	store = sessions.NewCookieStore([]byte("lkjlkjjljks"))
 	err = godotenv.Load("./.env")
 	if err != nil {
 		stdLog.Printf("Error loading env: %v\n", err.Error())
-		return
 	}
 	sc.BaseURL = os.Getenv("REDEEM_URL")
 	sc.DB_URL = fmt.Sprintf("%v?sslmode=disable", os.Getenv("REDEEM_DB"))
@@ -59,24 +58,55 @@ func init() {
 	sc.Client_Secret = os.Getenv("REDEEM_SECRET")
 	sc.Scope_String = os.Getenv("REDEEM_SCOPE")
 	sc.Webhook_Secret = os.Getenv("REDEEM_EVENT_SECRET")
+	sc.Store_Key = os.Getenv("REDEEM_STORE")
 	sc.Port = os.Getenv("REDEEM_PORT")
-	if sc.BaseURL == "" || sc.DB_URL == "" || sc.Client_ID == "" || sc.Client_Secret == "" || sc.Scope_String == "" || sc.Webhook_Secret == "" {
-		stdLog.Println("Error reading env variables")
-		fileLog.Printf("Error reading env variables, %v", sc)
-		return
+	if sc.BaseURL == "" {
+		stdLog.Println("Error reading base url from env")
+		fileLog.Fatalf("Error reading base url from env, %v", sc.BaseURL)
+	}
+
+	if sc.DB_URL == "" {
+		stdLog.Println("Error reading db url from env")
+		fileLog.Fatalf("Error reading db url from env, %v", sc.DB_URL)
+	}
+
+	if sc.Client_ID == "" {
+		stdLog.Println("Error reading client id from env")
+		fileLog.Fatalf("Error reading client id from env, %v", sc.Client_ID)
+	}
+
+	if sc.Client_Secret == "" {
+		stdLog.Println("Error reading client secret from env")
+		fileLog.Fatalf("Error reading client secret from env, %v", sc.Client_Secret)
+	}
+
+	if sc.Webhook_Secret == "" {
+		stdLog.Println("Error reading webhook secret from env")
+		fileLog.Fatalf("Error reading webhook secret from env, %v", sc.Webhook_Secret)
+	}
+
+	if sc.Store_Key == "" {
+		stdLog.Println("Error reading Store Secret from env")
+		fileLog.Fatalf("Error reading base url from env, %v", sc)
+	}
+
+	if sc.Scope_String == "" {
+		stdLog.Println("Error reading Scope from env")
+		sc.Scope_String = "channel:read:redemptions+moderator:read:followers"
 	}
 
 	if sc.Port == "" {
 		sc.Port = "8083"
 	}
 
+	store = sessions.NewCookieStore([]byte(sc.Store_Key))
+
 	// Initialize the database
 
 	err = sdb.Init(sc.DB_URL)
 	if err != nil {
 		stdLog.Println("Error initializing database:", err.Error())
-		fileLog.Println("Error initializing database:", err.Error())
-		return
+		fileLog.Fatalln("Error initializing database:", err.Error())
 	}
 	defer sdb.DB.Close()
 }
@@ -109,6 +139,11 @@ func main() {
 	router.HandleFunc("/follow/{id:[0-9]+}", followDeleteBtn)
 	router.HandleFunc("/redeem", redeemStateEdit).Methods(http.MethodPost)
 	router.HandleFunc("/redeem/{id:[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}}", redeemDeleteBtn)
+	router.HandleFunc("/usr/add", handleUserAdd).Methods(http.MethodGet)
+	router.HandleFunc("/usr/signup", handleSignUp).Methods(http.MethodGet)
+	router.HandleFunc("/usr/link", handleLink)
+	router.HandleFunc("/usr/signup", handleUserSignup).Methods(http.MethodPost)
+	router.HandleFunc("/usr/add", handleAddPost).Methods(http.MethodPost)
 
 	// Serve static files from the "static" directory
 	router.PathPrefix("/static/").Handler(http.StripPrefix("/static/", http.FileServer(http.Dir("static"))))

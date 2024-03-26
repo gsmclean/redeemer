@@ -15,6 +15,8 @@ type BasicData struct {
 	UserName      string
 	TwitchAccount int
 	IsLoggedIn    bool
+	CanInvite     bool
+	IsAdmin       bool
 }
 type TwitchAccount struct {
 	ChannelName string
@@ -57,6 +59,8 @@ func indexHandler(w http.ResponseWriter, r *http.Request) {
 			UserName:      "",
 			TwitchAccount: -1,
 			IsLoggedIn:    false,
+			CanInvite:     false,
+			IsAdmin:       false,
 		}
 	} else {
 		uid := session.Values["id"].(int)

@@ -62,5 +62,6 @@ func PushToSheet(sheetId int64, spreadsheetId string, rowData []string) error {
 	if err != nil || response2.HTTPStatusCode != 200 {
 		log.Error(err)
 	}
+
 	return err
 }

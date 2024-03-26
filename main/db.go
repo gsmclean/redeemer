@@ -395,11 +395,17 @@ func (sdb SiteDB) AddRedeemEvent(re helix.EventSubChannelPointsCustomRewardRedem
 func (sdb SiteDB) GetUserData(uid int) (BasicData, error) {
 	var bd BasicData
 	var ta sql.NullInt32
-	err := sdb.DB.QueryRow("SELECT id, user_name, twitch_account FROM users WHERE id = $1", uid).Scan(&bd.UserID, &bd.UserName, &ta)
+	var p sql.NullInt16
+	err := sdb.DB.QueryRow("SELECT id, user_name, twitch_account, permissions FROM users WHERE id = $1", uid).Scan(&bd.UserID, &bd.UserName, &ta, &p)
 	if ta.Valid {
 		bd.TwitchAccount = int(ta.Int32)
 	} else {
 		bd.TwitchAccount = -1
+	}
+	if p.Valid {
+		bd.IsAdmin = (p.Int16 & 2) > 0
+	} else {
+		bd.CanInvite = (p.Int16 & 1) > 0
 	}
 	bd.UserID = uid
 	return bd, err
