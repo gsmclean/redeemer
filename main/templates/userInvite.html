@@ -1,0 +1,7 @@
+{{define "main"}}
+<h1>Login</h1>
+{{if .Message}}
+<p style="color: red;">{{.Message}}</p>
+{{end}}
+{{.URL}}/usr/signup?token={{.Token}}
+{{end}}

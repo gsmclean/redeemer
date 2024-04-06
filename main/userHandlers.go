@@ -103,6 +103,7 @@ func logonHandler(w http.ResponseWriter, r *http.Request) {
 		session, _ := store.Get(r, "session.id")
 		// Verify login credentials
 		test, uid := sdb.verifyLogin(username, password)
+		stdLog.Printf("User is logged in? %v\n", test)
 		if test {
 			// Redirect to the greeting page with the username as a query parameter
 			session.Values["Authenticated"] = true

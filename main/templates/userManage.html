@@ -3,8 +3,8 @@
 {{if .Message}}
 <p style="color: red;">{{.Message}}</p>
 {{end}}
-<form method="post" action="/signup">
-    <input type="hidden" id="inviter" name="initer" value="{{ .User.uid }}">
+<form method="post" action="/usr/add">
+    <input type="hidden" id="inviter" name="initer" value="{{ .UserID }}">
     <label for="username">Username:</label>
     <input type="text" id="username" name="username" required><br>
     <button type="submit">Generate Invite</button>

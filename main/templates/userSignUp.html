@@ -4,8 +4,9 @@
 <p style="color: red;">{{.Message}}</p>
 {{end}}
 <form method="post" action="/signup">
+    <input type="hidden" value="{{.Token}}">
     <label for="username">Username:</label>
-    <input type="text" id="username" name="username" value="{{ .User }}" required><br>
+    <input type="text" id="username" name="username" value="" required><br>
     <label for="password">Password:</label>
     <input type="password" id="password" name="password" required><br>
     <label for="confirm">Confirm:</label>

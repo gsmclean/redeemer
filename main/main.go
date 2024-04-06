@@ -108,7 +108,7 @@ func init() {
 		stdLog.Println("Error initializing database:", err.Error())
 		fileLog.Fatalln("Error initializing database:", err.Error())
 	}
-	defer sdb.DB.Close()
+	// defer sdb.DB.Close()
 }
 
 func main() {

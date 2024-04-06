@@ -6,6 +6,7 @@ import (
 	"os"
 	"strconv"
 
+	"github.com/google/uuid"
 	pg "github.com/lib/pq"
 	helix "github.com/nicklaw5/helix/v2"
 	"golang.org/x/crypto/bcrypt"
@@ -205,10 +206,12 @@ func (sdb SiteDB) verifyLogin(username, password string) (bool, int) {
 	rows := sdb.DB.QueryRow("SELECT password, id, permissions FROM users WHERE user_name = $1", username)
 	err := rows.Scan(&hashedPassword, &suid, &perms)
 	if err != nil {
+		stdLog.Printf("Error scanning: %v", err)
 		return false, -1
 	}
 
 	if !perms.Valid {
+		stdLog.Printf("Bad perms: %v", perms)
 		return false, -1
 	}
 
@@ -443,8 +446,8 @@ func (sdb SiteDB) HandleOauth(state string, tid string, name string) error {
 	if err != nil {
 		return err
 	}
-
-	return nil
+	_, err = sdb.DB.Exec("DELETE FROM auth_pending WHERE state = $1", state)
+	return err
 
 }
 
@@ -492,4 +495,32 @@ func (sdb SiteDB) UpdateRedeemState(fid string, sid int) error {
 func (sdb SiteDB) DeleteRedeem(fid string) error {
 	_, err := sdb.DB.Exec("DELETE FROM redeem_events WHERE id = $1", fid)
 	return err
+}
+
+func (sdb SiteDB) NewUserInvite() (string, error) {
+	token := uuid.New().String()
+	_, err := sdb.DB.Exec("INSERT INTO invite (token) VALUES ($1)", token)
+	return token, err
+}
+
+func (sdb SiteDB) CheckToken(token string) (int16, error) {
+	res, err := sdb.DB.Query("SELECT id FROM USERS")
+	if err != nil {
+		return -1, err
+	}
+	test := res.Next()
+	if !test {
+		stdLog.Printf("Token Failure\n")
+		return -1, nil
+	}
+	var id sql.NullInt16
+	err = res.Scan(&id)
+	if err != nil {
+		return -1, err
+	}
+	if !id.Valid {
+		return -1, err
+	}
+	return id.Int16, nil
+
 }
