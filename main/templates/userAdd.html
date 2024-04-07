@@ -1,0 +1,17 @@
+{{define "main"}}
+<h1>Invite User</h1>
+{{if .Message}}
+<p style="color: red;">{{.Message}}</p>
+{{end}}
+{{ if .CanInvite }}
+<form method="post" action="/usr/add">
+    <input type="hidden" id="inviter" name="initer" value="{{ .UserID }}">
+    <label for="username">Username:</label>
+    <input type="text" id="username" name="username" required><br>
+    <button type="submit">Generate Invite</button>
+</form>
+{{end}}
+{{if not .CanInvite}}
+<h1>You do not have permissions to do this</h1>
+{{end}}
+{{end}}

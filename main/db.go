@@ -504,7 +504,7 @@ func (sdb SiteDB) NewUserInvite() (string, error) {
 }
 
 func (sdb SiteDB) CheckToken(token string) (int16, error) {
-	res, err := sdb.DB.Query("SELECT id FROM USERS")
+	res, err := sdb.DB.Query("SELECT id FROM invite WHERE token = $1", token)
 	if err != nil {
 		return -1, err
 	}
@@ -523,4 +523,105 @@ func (sdb SiteDB) CheckToken(token string) (int16, error) {
 	}
 	return id.Int16, nil
 
+}
+
+func (sdb SiteDB) DeleteToken(id int16) error {
+	_, err := sdb.DB.Exec("DELETE FROM invite WHERE id = $1", id)
+	return err
+}
+
+func (sdb SiteDB) GetUsers() ([]UserData, error) {
+	stmt, err := sdb.DB.Prepare(`
+	SELECT
+		users.id, users.user_name, users.twitch_account, users.permissions
+	FROM
+		users
+	`)
+	if err != nil {
+		stdLog.Printf("Failed to prepare statement for users: %v\r", err.Error())
+		return nil, err
+	}
+	rows, err := stmt.Query()
+
+	if err != nil {
+		stdLog.Printf("Failed to query database for users: %v\r", err.Error())
+		return nil, err
+	}
+	defer rows.Close()
+
+	var vals []UserData
+	for rows.Next() {
+		var name string
+		var id, cid, perms sql.NullInt16
+		if err := rows.Scan(&id, &name, &cid, &perms); err != nil {
+			stdLog.Printf("Error getting")
+		}
+
+		var cid_val int16 = -1
+		if cid.Valid {
+			cid_val = cid.Int16
+		}
+		pv := perms.Int16
+		login := (pv & 0x1) > 0
+		invite := (pv & 0x2) > 0
+		admin := (pv & 0x4) > 0
+		vals = append(vals, UserData{
+			ID:      id.Int16,
+			Name:    name,
+			Chan_ID: cid_val,
+			Login:   login,
+			Invite:  invite,
+			Admin:   admin,
+		})
+	}
+
+	return vals, nil
+}
+
+func (sdb SiteDB) UpdatePerms(id int64, perms int16) error {
+	_, err := sdb.DB.Exec("UPDATE users SET permissions = $1 WHERE id = $2", perms, id)
+	return err
+}
+
+func (sdb SiteDB) DeleteUser(id int64) error {
+	_, err := sdb.DB.Exec("DELETE FROM users WHERE id = $2", id)
+	return err
+}
+
+func (sdb SiteDB) PasswordReset(id int64) (string, error) {
+	pw := GenerateSecureToken(10)
+	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(pw), bcrypt.DefaultCost)
+	if err != nil {
+		return "", err
+	}
+	_, err = sdb.DB.Exec("UPDATE users SET password = $1 WHERE id = $2", hashedPassword, id)
+	return pw, err
+}
+
+func (sdb SiteDB) UpdatePassword(id int64, opw string, npw string) error {
+	var hashedPassword string
+	rows := sdb.DB.QueryRow("SELECT password FROM users WHERE id = $1", id)
+	err := rows.Scan(&hashedPassword)
+	if err != nil {
+		stdLog.Printf("Error scanning: %v\n", err)
+		return err
+	}
+
+	err = bcrypt.CompareHashAndPassword([]byte(hashedPassword), []byte(opw))
+	if err != nil {
+		stdLog.Printf("hash compare error: %v\n", err)
+		return err
+	}
+	newHash, err := bcrypt.GenerateFromPassword([]byte(npw), bcrypt.DefaultCost)
+	if err != nil {
+		stdLog.Printf("Error generating new hash: %v\n", err)
+		return err
+	}
+
+	_, err = sdb.DB.Exec("UPDATE users SET password = $1 WHERE id = $2", newHash, id)
+	if err != nil {
+		stdLog.Printf("Error updating via sql: %v\n", err)
+		return err
+	}
+	return nil
 }

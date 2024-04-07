@@ -1,12 +1,56 @@
 {{define "main"}}
-<h1>Invite User</h1>
+<h1>Manage User</h1>
 {{if .Message}}
 <p style="color: red;">{{.Message}}</p>
 {{end}}
-<form method="post" action="/usr/add">
-    <input type="hidden" id="inviter" name="initer" value="{{ .UserID }}">
-    <label for="username">Username:</label>
-    <input type="text" id="username" name="username" required><br>
-    <button type="submit">Generate Invite</button>
-</form>
+{{ if .IsAdmin }}
+<table class="table">
+    <thead>
+        <tr>
+            <th scope="col">User ID</th>
+            <th scope="col">User Name</th>
+            <th scope="col">Channel ID</th>
+            <th scope="col">Login</th>
+            <th scope="col">Invite</th>
+            <th scope="col">Admin</th>
+            <th scope="col">Submit</th>
+            <th scope="col">Reset Password</th>
+            <th scope="col">Delete</th>
+        </tr>
+    </thead>
+    <tbody>
+        {{ range $v := .Users }}
+        <tr>
+            <td>{{ $v.ID }}</td>
+            <td>{{$v.Name}}</td>
+            <td>{{$v.Chan_ID}}</td>
+            <form hx-post="/usr/perms" hx-swap="none" class="filter-container">
+                <input type="hidden" name="id" value="{{$v.ID}}">
+                <td><input type="checkbox" name="login" value="true" {{ if $v.Login }}checked{{end}}></td>
+                <td><input type="checkbox" name="invite" value="true" {{ if $v.Invite }}checked{{end}}></td>
+                <td><input type="checkbox" name="admin" value="true" {{ if $v.Admin }}checked{{end}}></td>
+                <td><button type="submit">Submit</button></td>
+            </form>
+            <td><button class="btn btn-danger" hx-get="/usr/pwres/{{$v.ID}}" hx-confirm="Are you sure?"
+                    hx-target="#modals-here" hx-trigger="click" data-bs-toggle="modal" data-bs-target="#modals-here">PW
+                    RS</button>
+            </td>
+            <td>
+                <button class="btn btn-danger" hx-delete="/usr/{{ $v.ID }}" hx-confirm="Are you sure?">
+                    Delete
+                </button>
+            </td>
+        </tr>
+        {{end}}
+    </tbody>
+</table>
+<div id="modals-here" class="modal modal-blur fade" style="display: none" aria-hidden="false" tabindex="-1">
+    <div class="modal-dialog modal-lg modal-dialog-centered" role="document">
+        <div class="modal-content"></div>
+    </div>
+</div>
+{{end}}
+{{if not .IsAdmin }}
+<h1>You do not have permissions to do this</h1>
+{{end}}
 {{end}}

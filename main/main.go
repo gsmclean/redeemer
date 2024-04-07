@@ -141,10 +141,15 @@ func main() {
 	router.HandleFunc("/redeem/{id:[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}}", redeemDeleteBtn)
 	router.HandleFunc("/usr/add", handleUserAdd).Methods(http.MethodGet)
 	router.HandleFunc("/usr/signup", handleSignUp).Methods(http.MethodGet)
-	router.HandleFunc("/usr/link", handleLink)
 	router.HandleFunc("/usr/signup", handleUserSignup).Methods(http.MethodPost)
 	router.HandleFunc("/usr/add", handleAddPost).Methods(http.MethodPost)
-
+	router.HandleFunc("/usr/manage", handleManage)
+	router.HandleFunc("/usr/perms", handlePerms).Methods(http.MethodPost)
+	router.HandleFunc("/usr/{id:[0-9]+}", handleUserDel).Methods(http.MethodDelete)
+	router.HandleFunc("/usr/pwres/{id:[0-9]+}", handlePWRes).Methods(http.MethodGet)
+	router.HandleFunc("/profile/pwd", handlePWChange).Methods(http.MethodGet)
+	router.HandleFunc("/profile/pwd", handlePwdPost).Methods(http.MethodPost)
+	// router.HandleFunc("/stupidme", tempReset)
 	// Serve static files from the "static" directory
 	router.PathPrefix("/static/").Handler(http.StripPrefix("/static/", http.FileServer(http.Dir("static"))))
 

@@ -68,9 +68,14 @@ func indexHandler(w http.ResponseWriter, r *http.Request) {
 		var err error
 		userData, err = sdb.GetUserData(uid)
 		if err != nil {
-			log.Print(err.Error())
-			http.Error(w, "Internal Server Error", http.StatusInternalServerError)
-			return
+			userData = BasicData{
+				UserID:        0,
+				UserName:      "",
+				TwitchAccount: -1,
+				IsLoggedIn:    false,
+				CanInvite:     false,
+				IsAdmin:       false,
+			}
 		}
 		userData.IsLoggedIn = session.Values["Authenticated"].(bool)
 		session.Save(r, w)

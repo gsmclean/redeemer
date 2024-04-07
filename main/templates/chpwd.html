@@ -1,0 +1,13 @@
+{{define "main"}}
+<h1>Change Password</h1>
+<form method="post" action="/profile/pwd">
+    <input type="hidden" id="id" name="id" value="{{.UserID}}">
+    <label for="password">Old Password:</label>
+    <input type="password" id="opd" name="opd" required><br>
+    <label for="password">New Password:</label>
+    <input type="password" id="npd" name="npd" required><br>
+    <label for="password">Confirm Password:</label>
+    <input type="password" id="cpd" name="cpd" required><br>
+    <button type="submit">Submit</button>
+</form>
+{{end}}

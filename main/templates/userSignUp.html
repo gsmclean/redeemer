@@ -3,8 +3,8 @@
 {{if .Message}}
 <p style="color: red;">{{.Message}}</p>
 {{end}}
-<form method="post" action="/signup">
-    <input type="hidden" value="{{.Token}}">
+<form method="post" action="/usr/signup">
+    <input type="hidden" id="token" name="token" value="{{.Token}}">
     <label for="username">Username:</label>
     <input type="text" id="username" name="username" value="" required><br>
     <label for="password">Password:</label>
